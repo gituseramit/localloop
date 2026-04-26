@@ -1,0 +1,378 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  PARTNER
+  DELIVERY_AGENT
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  AWAITING_PICKUP
+  PICKED_UP
+  IN_PROGRESS
+  COMPLETED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum DeliveryType {
+  PICKUP
+  DELIVERY
+  SELF_COLLECT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  COD
+  WALLET
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FLAT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum DeliveryTaskType {
+  PICKUP
+  DROP
+}
+
+enum DeliveryTaskStatus {
+  ASSIGNED
+  ARRIVED
+  COMPLETED
+  FAILED
+}
+
+enum TargetType {
+  PARTNER
+  DELIVERY_AGENT
+}
+
+// ─────────────────────────────────────────────
+// User & Profiles
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String?   @unique
+  phone         String?   @unique
+  passwordHash  String?
+  role          Role      @default(CUSTOMER)
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  customerProfile       CustomerProfile?
+  partnerProfile        PartnerProfile?
+  deliveryAgentProfile  DeliveryAgentProfile?
+  addresses             Address[]
+  ordersAsCustomer      Order[]               @relation("CustomerOrders")
+  reviewsGiven          Review[]              @relation("ReviewsGiven")
+  supportTickets        SupportTicket[]
+
+  @@map("users")
+}
+
+model CustomerProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  walletBalance    Float    @default(0)
+  defaultAddressId String?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("customer_profiles")
+}
+
+model PartnerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  shopName        String
+  description     String?
+  gstNumber       String?
+  aadhaarNumber   String?
+  isApproved      Boolean  @default(false)
+  isSuspended     Boolean  @default(false)
+  rating          Float    @default(0)
+  totalOrders     Int      @default(0)
+  commissionRate  Float    @default(15.0)
+  operatingHours  Json?
+  coverImageUrl   String?
+  city            String?
+  pincode         String?
+  lat             Float?
+  lng             Float?
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceListings ServiceListing[]
+  orders          Order[]          @relation("PartnerOrders")
+
+  @@map("partner_profiles")
+}
+
+model DeliveryAgentProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  vehicleType      String?
+  isAvailable      Boolean  @default(false)
+  isSuspended      Boolean  @default(false)
+  rating           Float    @default(0)
+  totalDeliveries  Int      @default(0)
+  currentLat       Float?
+  currentLng       Float?
+  kycStatus        String   @default("PENDING")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryTasks DeliveryTask[]
+
+  @@map("delivery_agent_profiles")
+}
+
+// ─────────────────────────────────────────────
+// Addresses
+// ─────────────────────────────────────────────
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  label     String  @default("Home")
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  lat       Float?
+  lng       Float?
+  isDefault Boolean @default(false)
+
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ordersAsPickup  Order[] @relation("PickupAddress")
+  ordersAsDrop    Order[] @relation("DropAddress")
+
+  @@map("addresses")
+}
+
+// ─────────────────────────────────────────────
+// Services
+// ─────────────────────────────────────────────
+
+model ServiceCategory {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  icon        String?
+  description String?
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  serviceListings ServiceListing[]
+
+  @@map("service_categories")
+}
+
+model ServiceListing {
+  id            String  @id @default(cuid())
+  partnerId     String
+  categoryId    String
+  name          String
+  description   String?
+  price         Float
+  estimatedTime String?
+  isActive      Boolean @default(true)
+
+  partner    PartnerProfile  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  category   ServiceCategory @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("service_listings")
+}
+
+// ─────────────────────────────────────────────
+// Orders
+// ─────────────────────────────────────────────
+
+model Order {
+  id               String        @id @default(cuid())
+  customerId       String
+  partnerId        String
+  status           OrderStatus   @default(PENDING)
+  totalAmount      Float
+  platformFee      Float         @default(0)
+  partnerEarning   Float         @default(0)
+  deliveryFee      Float         @default(0)
+  deliveryType     DeliveryType  @default(SELF_COLLECT)
+  paymentStatus    PaymentStatus @default(PENDING)
+  notes            String?
+  couponCode       String?
+  discountAmount   Float         @default(0)
+  pickupAddressId  String?
+  dropAddressId    String?
+  outputFileUrls   Json?
+  rejectionReason  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  customer        User            @relation("CustomerOrders", fields: [customerId], references: [id])
+  partner         PartnerProfile  @relation("PartnerOrders", fields: [partnerId], references: [id])
+  pickupAddress   Address?        @relation("PickupAddress", fields: [pickupAddressId], references: [id])
+  dropAddress     Address?        @relation("DropAddress", fields: [dropAddressId], references: [id])
+  orderItems      OrderItem[]
+  deliveryTasks   DeliveryTask[]
+  payment         Payment?
+  reviews         Review[]
+  supportTickets  SupportTicket[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String  @id @default(cuid())
+  orderId          String
+  serviceListingId String
+  quantity         Int     @default(1)
+  unitPrice        Float
+  instructions     String?
+  fileUrls         Json?
+
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceListing  ServiceListing @relation(fields: [serviceListingId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────────
+// Delivery
+// ─────────────────────────────────────────────
+
+model DeliveryTask {
+  id            String             @id @default(cuid())
+  orderId       String
+  agentId       String?
+  type          DeliveryTaskType
+  status        DeliveryTaskStatus @default(ASSIGNED)
+  otp           String?
+  pickupAddress String?
+  dropAddress   String?
+  assignedAt    DateTime           @default(now())
+  completedAt   DateTime?
+  notes         String?
+
+  order Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  agent DeliveryAgentProfile? @relation(fields: [agentId], references: [id])
+
+  @@map("delivery_tasks")
+}
+
+// ─────────────────────────────────────────────
+// Payments
+// ─────────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String        @unique
+  amount            Float
+  method            PaymentMethod @default(RAZORPAY)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime      @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// Reviews
+// ─────────────────────────────────────────────
+
+model Review {
+  id          String     @id @default(cuid())
+  orderId     String
+  reviewerId  String
+  targetId    String
+  targetType  TargetType
+  rating      Int
+  comment     String?
+  createdAt   DateTime   @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewer User  @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+
+  @@map("reviews")
+}
+
+// ─────────────────────────────────────────────
+// Coupons
+// ─────────────────────────────────────────────
+
+model Coupon {
+  id              String       @id @default(cuid())
+  code            String       @unique
+  discountType    DiscountType
+  discountValue   Float
+  minOrderAmount  Float        @default(0)
+  maxUsage        Int          @default(100)
+  usageCount      Int          @default(0)
+  expiresAt       DateTime?
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+
+  @@map("coupons")
+}
+
+// ─────────────────────────────────────────────
+// Support
+// ─────────────────────────────────────────────
+
+model SupportTicket {
+  id          String       @id @default(cuid())
+  userId      String
+  orderId     String?
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  adminNote   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@map("support_tickets")
+}
