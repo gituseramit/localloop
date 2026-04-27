@@ -16,7 +16,7 @@ export default function SupportPage() {
             Support Center
           </h1>
           <p className="text-lg text-[var(--on-surface-variant)] max-w-2xl mx-auto">
-            We're here to help you navigate LocalLoop seamlessly.
+            We&apos;re here to help you navigate LocalLoop seamlessly.
           </p>
         </div>
 
