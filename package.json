@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node init-env.js && npx prisma db push && next build",
+    "build": "node init-env.js && next build",
     "start": "next start",
     "lint": "eslint",
     "db:push": "prisma db push",

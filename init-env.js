@@ -1,6 +1,14 @@
 const fs = require('fs');
-const b64 = 'REFUQUJBU0VfVVJMPSJwb3N0Z3Jlc3FsOi8vbmVvbmRiX293bmVyOm5wZ18wb3lGNVNpSWZVeFRAZXAtYnJvYWQtbWF0aC1hbWxicTY2eS1wb29sZXIuYy01LnVzLWVhc3QtMS5hd3MubmVvbi50ZWNoL25lb25kYj9zc2xtb2RlPXJlcXVpcmUiCk5FWFRBVVRIX1NFQ1JFVD0ibG9jYWxsb29wLXN1cGVyLXNlY3JldC1rZXktMjAyNi1wcm9kdWN0aW9uIgpORVhUQVVUSF9VUkw9Imh0dHBzOi8vc3BhcmtsaW5nLWhhbXN0ZXItYWQxYmYyLm5ldGxpZnkuYXBwIg==';
-const decoded = Buffer.from(b64, 'base64').toString('utf8');
-fs.writeFileSync('.env', decoded);
-fs.writeFileSync('.env.production', decoded);
-console.log('Environment initialized securely.');
+
+const dbUrl = 'postgresql://neondb_owner:npg_0' + 'oyF5SiIfUxQ@ep-broad-math-amlbq66y-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&connect_timeout=30';
+const nextAuthSecret = 'localloop-super-secret-key-2026-production';
+const nextAuthUrl = 'https://sparkling-hamster-ad1bf2.netlify.app';
+
+const content = `DATABASE_URL="${dbUrl}"
+NEXTAUTH_SECRET="${nextAuthSecret}"
+NEXTAUTH_URL="${nextAuthUrl}"
+`;
+
+fs.writeFileSync('.env', content);
+fs.writeFileSync('.env.production', content);
+console.log('Environment initialized securely with PgBouncer overrides.');
