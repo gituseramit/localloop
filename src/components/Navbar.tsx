@@ -40,7 +40,7 @@ export default function Navbar() {
         </Link>
 
         {/* Location pill */}
-        <button className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-sm text-[var(--on-surface-variant)] hover:border-[var(--primary)]/30 transition-all">
+        <button onClick={() => alert("Location matrices are locked to Delhi NCR currently.")} className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-sm text-[var(--on-surface-variant)] hover:border-[var(--primary)]/30 transition-all">
           <MapPin size={15} className="text-[var(--primary)]" />
           <span className="max-w-[140px] truncate font-semibold">Delhi, India</span>
           <ChevronDown size={14} className="opacity-50" />
@@ -65,7 +65,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3 ml-auto">
           {session ? (
             <>
-              <button className="relative p-2.5 rounded-xl hover:bg-[var(--surface-container-low)] transition-all text-[var(--on-surface-variant)] border border-transparent hover:border-[var(--outline-variant)]">
+              <button onClick={() => alert("No new notifications from the matrix.")} className="relative p-2.5 rounded-xl hover:bg-[var(--surface-container-low)] transition-all text-[var(--on-surface-variant)] border border-transparent hover:border-[var(--outline-variant)]">
                 <Bell size={20} />
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[var(--error)] border-2 border-white rounded-full"></span>
               </button>

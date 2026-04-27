@@ -54,9 +54,9 @@ export default async function ServicesPage({
           </h1>
         </div>
         <div className="flex gap-3">
-          <button className="btn btn-secondary py-3 px-6 gap-2 font-bold shadow-sm">
+          <Link href="/services#map" className="btn btn-secondary py-3 px-6 gap-2 font-bold shadow-sm inline-flex">
             <Filter size={18} className="text-primary" /> Map View
-          </button>
+          </Link>
         </div>
       </div>
 

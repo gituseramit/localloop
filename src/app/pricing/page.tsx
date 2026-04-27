@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import Link from "next/link";
 
 export default function PricingPage() {
   const tiers = [
@@ -57,11 +58,11 @@ export default function PricingPage() {
                 ))}
               </ul>
               
-              <button 
-                className={`w-full py-3 rounded-full font-bold transition-transform hover:scale-105 ${t.highlight ? 'bg-[var(--on-primary)] text-[var(--primary)]' : 'bg-[var(--primary)] text-[var(--on-primary)]'}`}
+              <Link href={`/signup?role=${t.name.toUpperCase()}`}
+                className={`w-full py-3 text-center inline-block rounded-full font-bold transition-transform hover:scale-105 ${t.highlight ? 'bg-[var(--on-primary)] text-[var(--primary)]' : 'bg-[var(--primary)] text-[var(--on-primary)]'}`}
               >
                 Join Now
-              </button>
+              </Link>
             </div>
           ))}
         </div>
