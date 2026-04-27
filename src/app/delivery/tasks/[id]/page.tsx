@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { PrismaClient } from "@prisma/client";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ArrowLeft, MapPin, Package, CheckCircle2 } from "lucide-react";
 
 export default async function DeliveryTaskDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user || session.user.role !== "DELIVERY_AGENT") redirect("/login");
 
   const resolvedParams = await params;
